@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.23)
 
 project(SigmaProtocolSrc)
 
+link_libraries(crypto)
+
 aux_source_directory(. SRC_LIST)
 
 add_library(SigmaProtocolSrc STATIC ${SRC_LIST})
