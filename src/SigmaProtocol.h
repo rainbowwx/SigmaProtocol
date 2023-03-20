@@ -14,7 +14,6 @@
 #include <openssl/rand.h>
 
 #include <cstdio>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -25,79 +24,101 @@ namespace yacl::crypto {
 // SigmaprotocolCommoInput specifies the OneWayHomomorphism and hashname of
 // practical protocol
 struct SigmaProtocolCommonInput {
-  SigmaProtocolCommonInput(const EC_GROUP* group, size_t n,
+  SigmaProtocolCommonInput(const EC_GROUP* group, size_t n1, size_t n2,
                            const char* hashname)
-      : group(group), n(n), hashname(hashname), H(n, nullptr), G(n, nullptr) {
+      : group(group),
+        n1(n1),
+        n2(n2),
+        hashname(hashname),
+        G(n1, nullptr),
+        H(n2, nullptr) {
     p = EC_GROUP_get0_order(group);
   }
 
   const EC_GROUP* group;
   const BIGNUM* p;
-  size_t n;                        // element number of vector G
-  std::vector<const EC_POINT*> H;  // the public group elements
-  std::vector<const EC_POINT*> G;  // the public generators of group
+  size_t n1;                       // number of elements in vector G
+  size_t n2;                       //  number of elements in vector H
+  std::vector<const EC_POINT*> G;  // public generators of group
+  std::vector<const EC_POINT*> H;  // public group elements
+
   const char* hashname;
 };
 
 struct SigmaProtocolResponseMsgShort {
-  BIGNUM* s;  // The second message which prover computed
-  BIGNUM* c;  // challenge
-  SigmaProtocolResponseMsgShort() {
-    s = BN_new();
-    c = BN_new();
-  }
+  std::vector<BIGNUM*> s;  // The second message which prover computed
+  BIGNUM* c;               // challenge
+  SigmaProtocolResponseMsgShort() { c = BN_new(); }
 
-  SigmaProtocolResponseMsgShort(BIGNUM* s, BIGNUM* c) {
-    s = BN_new();
+  SigmaProtocolResponseMsgShort(std::vector<BIGNUM*> s, BIGNUM* c) {
+    for (size_t i = 0; i < s.size(); i++) {
+      this->s.emplace_back(BN_new());
+      BN_copy(this->s[i], s[i]);
+    }
     c = BN_new();
-    BN_copy(this->s, s);
     BN_copy(this->c, c);
   }
 
   SigmaProtocolResponseMsgShort(const SigmaProtocolResponseMsgShort& msg) {
-    s = BN_new();
+    for (size_t i = 0; i < msg.s.size(); i++) {
+      this->s.emplace_back(BN_new());
+      BN_copy(this->s[i], msg.s[i]);
+    }
     c = BN_new();
-    BN_copy(this->s, msg.s);
-    BN_copy(this->c, msg.c);
+    BN_copy(this->c, c);
   }
 
   ~SigmaProtocolResponseMsgShort() {
-    BN_free(s);
+    for (size_t i = 0; i < s.size(); i++) {
+      BN_free(s[i]);
+    }
     BN_free(c);
   }
 };
 
 struct SigmaProtocolResponseMsgBatch {
   const EC_GROUP* group;
-  EC_POINT* T;
-  BIGNUM* s;
+  std::vector<EC_POINT*> T;
+  std::vector<BIGNUM*> s;
 
-  SigmaProtocolResponseMsgBatch(const EC_GROUP* group) {
-    this->group = group;
-    T = EC_POINT_new(this->group);
-    s = BN_new();
-  }
+  SigmaProtocolResponseMsgBatch(const EC_GROUP* group) { this->group = group; }
 
-  SigmaProtocolResponseMsgBatch(const EC_GROUP* group, const EC_POINT* T,
-                                const BIGNUM* r) {
+  SigmaProtocolResponseMsgBatch(const EC_GROUP* group,
+                                const std::vector<const EC_POINT*> T,
+                                const std::vector<const BIGNUM*> s) {
     this->group = group;
-    T = EC_POINT_new(this->group);
-    r = BN_new();
-    EC_POINT_copy(this->T, T);
-    BN_copy(this->s, r);
+    for (size_t i = 0; i < T.size(); i++) {
+      this->T.emplace_back(EC_POINT_new(group));
+      EC_POINT_copy(this->T[i], T[i]);
+    }
+
+    for (size_t i = 0; i < s.size(); i++) {
+      this->s.emplace_back(BN_new());
+      BN_copy(this->s[i], s[i]);
+    }
   }
 
   SigmaProtocolResponseMsgBatch(const SigmaProtocolResponseMsgBatch& msg) {
     this->group = msg.group;
-    T = EC_POINT_new(this->group);
-    s = BN_new();
-    EC_POINT_copy(this->T, msg.T);
-    BN_copy(this->s, msg.s);
+    for (size_t i = 0; i < msg.T.size(); i++) {
+      this->T.emplace_back(EC_POINT_new(group));
+      EC_POINT_copy(this->T[i], msg.T[i]);
+    }
+
+    for (size_t i = 0; i < msg.s.size(); i++) {
+      this->s.emplace_back(BN_new());
+      BN_copy(this->s[i], msg.s[i]);
+    }
   }
 
   ~SigmaProtocolResponseMsgBatch() {
-    EC_POINT_free(T);
-    BN_free(s);
+    for (size_t i = 0; i < T.size(); i++) {
+      EC_POINT_free(T[0]);
+    }
+
+    for (size_t i = 0; i < s.size(); i++) {
+      BN_free(s[0]);
+    }
   }
 };
 
@@ -181,6 +202,10 @@ class SigmaProtocolVerifierBatch {
  private:
   SigmaProtocolResponseMsgBatch msg_;
 };
+
+BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
+                                  const std::vector<const EC_POINT*> T,
+                                  BN_CTX* ctx);
 
 }  // namespace yacl::crypto
 

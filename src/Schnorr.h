@@ -10,7 +10,7 @@ namespace yacl::crypto {
 struct SchnorrCommonInput : public SigmaProtocolCommonInput {
   SchnorrCommonInput(const EC_GROUP* group, EC_POINT* G, EC_POINT* H,
                      const char* hashname = "sha256")
-      : SigmaProtocolCommonInput(group, 1, hashname) {
+      : SigmaProtocolCommonInput(group, 1, 1, hashname) {
     this->G[0] = G;
     this->H[0] = H;
   }
@@ -21,6 +21,7 @@ class SchnorrProverShort : public SigmaProtocolProverShort {
   SchnorrProverShort(const SchnorrCommonInput& params, const EC_POINT* x)
       : params_(params), SigmaProtocolProverShort() {
     GetX().emplace_back(x);
+    GetMsgReference().s.emplace_back(BN_new());
   }
 
   void Prove() override;
@@ -34,6 +35,8 @@ class SchnorrProverBatch : public SigmaProtocolProverBatch {
   SchnorrProverBatch(const SchnorrCommonInput& params, const EC_POINT* x)
       : params_(params), SigmaProtocolProverBatch(params.group) {
     GetX().emplace_back(x);
+    GetMsgReference().T.emplace_back(EC_POINT_new(params_.group));
+    GetMsgReference().s.emplace_back(BN_new());
   }
 
   void Prove() override;
@@ -66,8 +69,7 @@ class SchnorrVerifierBatch : public SigmaProtocolVerifierBatch {
   const SchnorrCommonInput& params_;
 };
 
-BIGNUM* SchnorrGetChallenge(const SchnorrCommonInput& params,
-                            const SigmaProtocolResponseMsgBatch& msg_,
+BIGNUM* SchnorrGetChallenge(const SchnorrCommonInput& params, const EC_POINT* T,
                             BN_CTX* ctx);
 
 }  // namespace yacl::crypto

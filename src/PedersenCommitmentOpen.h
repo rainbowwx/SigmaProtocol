@@ -8,156 +8,85 @@
 #include "SigmaProtocol.h"
 
 // This protocol Prover proves that he knows openings of public Perdersen
-// Commitment c Prover knows w, w2 such that c = G^w * H^w2 mod p
+// Commitment c Prover knows w1, w2 such that c = w1*G1 + w2*G2 mod p
 
 namespace yacl::crypto {
 
 /* input group, G, H, commitment */
-class PedersenCommitmentCommonInput : public SigmaProtocolCommonInput {
+struct PedersenCommitmentCommonInput : public SigmaProtocolCommonInput {
  public:
-  PedersenCommitmentCommonInput(const EC_GROUP* Group, const EC_POINT* g,
-                                const EC_POINT* h, const EC_POINT* Commitment,
-                                const char* HashName = "sha256")
-      : Group(Group),
-        G(g),
-        H(h),
-        Commitment(Commitment),
-        SigmaProtocolCommonInput(HashName) {
-    this->p = EC_GROUP_get0_order(Group);
+  PedersenCommitmentCommonInput(const EC_GROUP* Group, const EC_POINT* G1,
+                                const EC_POINT* G2, const EC_POINT* Commitment,
+                                const char* hashname = "sha256")
+      : SigmaProtocolCommonInput(group, 2, 1, hashname) {
+    this->G[0] = G1;
+    this->G[1] = G2;
+    this->H[0] = Commitment;
+  }
+};
+
+class PedersenCommitmentProverShort : public SigmaProtocolProverShort {
+ public:
+  PedersenCommitmentProverShort(const PedersenCommitmentCommonInput& params,
+                                const BIGNUM* x1, const BIGNUM* x2)
+      : params_(params_), SigmaProtocolProverShort() {
+    GetK().emplace_back(2, BN_new());
+    GetX().emplace_back(x1);
+    GetX().emplace_back(x2);
+    GetMsgReference().s.emplace_back(2, BN_new());
   }
 
-  const EC_GROUP* getGroup() const { return this->Group; }
-
-  const BIGNUM* getP() const { return this->p; }
-
-  const EC_POINT* getG() const { return this->G; }
-
-  const EC_POINT* getH() const { return this->H; }
-
-  const EC_POINT* getCommitment() const { return this->Commitment; }
+  void Prove() override;
 
  private:
-  const EC_GROUP* Group;  // the EC_GROUP
-
-  const BIGNUM* p;
-
-  const EC_POINT* G;  // generator
-
-  const EC_POINT* H;  // generator
-
-  const EC_POINT* Commitment;
+  const PedersenCommitmentCommonInput& params_;
 };
 
-class PedersenCommitmentProverInput : public SigmaProtocolProverInput {
+class PedersenCommitmentProverBatch : public SigmaProtocolProverBatch {
  public:
-  PedersenCommitmentProverInput() = default;
+  PedersenCommitmentProverBatch(const PedersenCommitmentCommonInput& params,
+                                const BIGNUM* x1, const BIGNUM* x2)
+      : params_(params_), SigmaProtocolProverBatch(params_.group) {
+    GetK().emplace_back(2, BN_new());
+    GetX().emplace_back(x1);
+    GetX().emplace_back(x2);
+    GetMsgReference().s.emplace_back(2, BN_new());
+    GetMsgReference().T.emplace_back(EC_POINT_new(params_.group));
+  }
 
-  PedersenCommitmentProverInput(const BIGNUM* x, const BIGNUM* r)
-      : w1(x), w2(r) {}
-
-  const BIGNUM* getW1() const { return w1; }
-
-  const BIGNUM* getW2() const { return w2; }
+  void Prove() override;
 
  private:
-  const BIGNUM* w1;
-
-  const BIGNUM* w2;
+  const PedersenCommitmentCommonInput& params_;
 };
 
-class PedersenCommitmentMessage : public SigmaProtocolResponseMessage {
+class PedersemCommitmentVerifierShort : public SigmaProtocolVerifierShort {
  public:
-  explicit PedersenCommitmentMessage(const EC_GROUP* Group)
-      : Group(Group), T(EC_POINT_new(Group)), s1(BN_new()), s2(BN_new()) {}
-
-  PedersenCommitmentMessage(const EC_GROUP* Group, const EC_POINT* d,
-                            const BIGNUM* u, const BIGNUM* v)
-      : Group(Group), T(EC_POINT_new(Group)), s1(BN_new()), s2(BN_new()) {
-    EC_POINT_copy(this->T, d);
-    BN_copy(this->s1, u);
-    BN_copy(this->s2, v);
-  }
-
-  PedersenCommitmentMessage(const PedersenCommitmentMessage& msg)
-      : Group(msg.Group), T(EC_POINT_new(Group)), s1(BN_new()), s2(BN_new()) {
-    EC_POINT_copy(this->T, msg.T);
-    BN_copy(this->s1, msg.s1);
-    BN_copy(this->s2, msg.s2);
-  }
-
-  ~PedersenCommitmentMessage() {
-    BN_free(s1);
-    BN_free(s2);
-    EC_POINT_free(T);
-  }
-
-  const EC_GROUP* Group;
-
-  EC_POINT* T;  // T = Y1*G + r2*H
-
-  BIGNUM* s1;  // s1 = Y1+ex
-
-  BIGNUM* s2;  // s2 = r2+er
-};
-
-class PedersenCommitmentProver : public SigmaProtocolProver {
- public:
-  PedersenCommitmentProver(const PedersenCommitmentCommonInput& params,
-                           const PedersenCommitmentProverInput& input)
-      : params(params),
-        input(input),
-        Msg(params.getGroup()),
-        r1(BN_new()),
-        r2(BN_new()),
-        flag1(0),
-        flag2(0) {}
-
-  void ComputeFirstMessage() override;
-
-  void ComputeSecondMessage() override;
-
-  PedersenCommitmentMessage getMsg() {
-    if (!flag1)
-      throw std::invalid_argument(
-          "FirstMessage hasn't been calculated yet. Try to run "
-          "ComputeFirstMessage()");
-    if (!flag2)
-      throw std::invalid_argument(
-          "SecondMessage hasn't been calculated yet. Try to run "
-          "ComputeSecondMessage()");
-    return this->Msg;
-  }
-
- private:
-  BIGNUM* r1;
-  BIGNUM* r2;
-
-  PedersenCommitmentMessage Msg;
-
-  const PedersenCommitmentCommonInput& params;
-
-  const PedersenCommitmentProverInput& input;
-
-  bool flag1, flag2;
-};
-
-class PedersemCommitmentVerifier : public SigmaProtocolVerifier {
- public:
-  PedersemCommitmentVerifier(const PedersenCommitmentCommonInput& params,
-                             const PedersenCommitmentMessage& Msg)
-      : params(params), Msg(Msg) {}
+  PedersemCommitmentVerifierShort(const PedersenCommitmentCommonInput& params,
+                                  const SigmaProtocolResponseMsgShort& msg)
+      : params_(params), SigmaProtocolVerifierShort(msg) {}
 
   bool Verify() override;
 
  private:
-  const PedersenCommitmentCommonInput& params;
+  const PedersenCommitmentCommonInput& params_;
+};
 
-  const PedersenCommitmentMessage& Msg;
+class PedersemCommitmentVerifierBatch : public SigmaProtocolVerifierBatch {
+ public:
+  PedersemCommitmentVerifierBatch(const PedersenCommitmentCommonInput& params,
+                                  const SigmaProtocolResponseMsgBatch& msg)
+      : params_(params), SigmaProtocolVerifierBatch(msg) {}
+
+  bool Verify() override;
+
+ private:
+  const PedersenCommitmentCommonInput& params_;
 };
 
 BIGNUM* PedersenCommitmentOpenGetChallenge(
-    const PedersenCommitmentCommonInput& params,
-    const PedersenCommitmentMessage& Msg, BN_CTX* ctx);
+    const PedersenCommitmentCommonInput& params, const EC_POINT* T,
+    BN_CTX* ctx);
 
 }  // namespace yacl::crypto
 
