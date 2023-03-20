@@ -129,12 +129,12 @@ struct SigmaProtocolResponseMsgBatch {
   }
 
   ~SigmaProtocolResponseMsgBatch() {
-    for (size_t i = 0; i < T.size(); i++) {
-      EC_POINT_free(T[0]);
+      for (size_t i = 0; i < T.size(); i++) {
+      EC_POINT_free(T[i]);
     }
 
     for (size_t i = 0; i < s.size(); i++) {
-      BN_free(s[0]);
+      BN_free(s[i]);
     }
   }
 };
@@ -261,7 +261,12 @@ class SigmaProtocolVerifierBatch {
 };
 
 BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
-                                  const std::vector<const EC_POINT*> T,
+                                  const EC_POINT* T,
+                                  BN_CTX* ctx);
+
+
+BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
+                                  const std::vector<EC_POINT*> &T,
                                   BN_CTX* ctx);
 
 }  // namespace yacl::crypto

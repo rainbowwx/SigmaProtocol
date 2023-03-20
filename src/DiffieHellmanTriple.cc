@@ -8,9 +8,9 @@ void DiffieHellmanTripleProverShort::Prove() {
   BN_CTX* ctx = BN_CTX_new();
   // Compute First Message
   // sample two random number in Z_q
-  std::vector<BIGNUM*>& k = GetK();
-  std::vector<const BIGNUM*>& x = GetX();
-  SigmaProtocolResponseMsgShort& Msg = this->GetMsgReference();
+  std::vector<BIGNUM*> &k = GetK();
+  std::vector<const BIGNUM*> &x = GetX();
+  SigmaProtocolResponseMsgShort &Msg = this->GetMsgReference();
 
   BN_rand_range(k[0], params_.p);
   BN_rand_range(k[1], params_.p);
@@ -45,9 +45,9 @@ void DiffieHellmanTripleProverBatch::Prove() {
 
   // Compute First Message
   // sample two random number in Z_q
-  std::vector<BIGNUM*>& k = GetK();
-  std::vector<const BIGNUM*>& x = GetX();
-  SigmaProtocolResponseMsgBatch& Msg = this->GetMsgReference();
+  std::vector<BIGNUM*> &k = GetK();
+  std::vector<const BIGNUM*> &x = GetX();
+  SigmaProtocolResponseMsgBatch &Msg = this->GetMsgReference();
 
   BN_rand_range(k[0], params_.p);
   BN_rand_range(k[1], params_.p);
@@ -71,7 +71,7 @@ void DiffieHellmanTripleProverBatch::Prove() {
 
 bool DiffieHellmanTripleVerifierShort::Verify() {
   BN_CTX* ctx = BN_CTX_new();
-  SigmaProtocolResponseMsgShort& Msg = this->GetMsg();
+  SigmaProtocolResponseMsgShort &Msg = this->GetMsg();
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
   int res = 0;
   std::vector<EC_POINT*> T;
@@ -177,7 +177,6 @@ BIGNUM* DiffieHellmanTripleGetChallenge(
   unsigned char* md = nullptr;
   unsigned int md_length = 0;
   assert(HashEncode(params.hashname, data, 7, length, md, md_length) == 0);
-
   BN_bin2bn(md, md_length, challenge);
 
   return challenge;

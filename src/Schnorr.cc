@@ -32,20 +32,18 @@ void SchnorrProverBatch::Prove() {
   BN_CTX* ctx = BN_CTX_new();
   // sample a random number k in Z_p
   GetK().emplace_back(BN_new());
-  std::vector<BIGNUM*>& k = GetK();
-  BIGNUM* random = BN_new();
-  BN_rand_range(random, params_.p);
-  k.push_back(random);
+  std::vector<BIGNUM*> k = GetK();
+  BN_rand_range(k[0], params_.p);
   // compute FirstMessage T = random *G
   EC_POINT_mul(params_.group, GetMsgReference().T[0], nullptr, params_.G[0],
-               random, ctx);
+               k[0], ctx);
 
   // get challenge
-  BIGNUM* challenge = SchnorrGetChallenge(params_, GetMsg().T[0], ctx);
+  BIGNUM* challenge = SchnorrGetChallenge(params_, GetMsgReference().T[0], ctx);
 
   // calculate r = w*e + random
   BN_mul(GetMsgReference().s[0], GetX()[0], challenge, ctx);
-  BN_add(GetMsgReference().s[0], GetMsgReference().s[0], random);
+  BN_add(GetMsgReference().s[0], GetMsgReference().s[0], k[0]);
 
   BN_CTX_free(ctx);
   BN_free(challenge);

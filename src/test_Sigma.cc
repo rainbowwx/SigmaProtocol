@@ -150,7 +150,9 @@ void DlogEqualityTest() {
   // Verifier
   Verifier_begin = std::chrono::high_resolution_clock::now();
   DlogEqualityVerifierBatch Verifier(params, Msg);
+
   bool res = Verifier.Verify();
+
   Verifier_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
       Verifier_end - Verifier_begin);
@@ -174,7 +176,7 @@ void DlogEqualityTest() {
       "\n-------------------DlogEqualityTest End--------------------------\n");
 }
 
-/*
+
 void PedersenCommitmentOpenTest() {
   printf(
       "\n-------------------PedersenCommitmentOpenTest "
@@ -201,15 +203,13 @@ void PedersenCommitmentOpenTest() {
   EC_POINT_add(curve, com, com, tmp, ctx);
 
   PedersenCommitmentCommonInput params(curve, G, H, com, "sha256");
-  PedersenCommitmentProverInput input(w1, w2);
 
   // Prover
   Prover_begin = std::chrono::high_resolution_clock::now();
-  PedersenCommitmentProver prover(params, input);
-  prover.ComputeFirstMessage();
-  prover.ComputeSecondMessage();
+  PedersenCommitmentProverBatch prover(params, w1,w2);
+  prover.Prove();
 
-  PedersenCommitmentMsgBatch Msg = prover.getMsg();
+  SigmaProtocolResponseMsgBatch Msg = prover.GetMsg();
   Prover_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
       Prover_end - Prover_begin);
@@ -217,7 +217,7 @@ void PedersenCommitmentOpenTest() {
 
   // Verifier
   Verifier_begin = std::chrono::high_resolution_clock::now();
-  PedersemCommitmentVerifier verifier(params, Msg);
+  PedersemCommitmentVerifierBatch verifier(params, Msg);
 
   int res = verifier.Verify();
   Verifier_end = std::chrono::high_resolution_clock::now();
@@ -263,15 +263,13 @@ void DiffieHellmanTest() {
   EC_POINT_mul(curve, Y3, nullptr, Y1, w2, ctx);
 
   DiffieHellmanTripleCommonInput params(curve, generator, Y1, Y2, Y3);
-  DiffieHellmanTripleProverInput input(w1, w2);
 
   // Prover
   Prover_begin = std::chrono::high_resolution_clock::now();
-  DiffieHellmanTripleProverBatch prover(params, input);
+  DiffieHellmanTripleProverBatch prover(params, w1, w2);
 
-  prover.ComputeFirstMessage();
-  prover.ComputeSecondMessage();
-  DiffieHellmanTripleMessage Msg = prover.getMsg();
+  prover.Prove();
+  SigmaProtocolResponseMsgBatch Msg = prover.GetMsg();
   Prover_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
       Prover_end - Prover_begin);
@@ -279,7 +277,7 @@ void DiffieHellmanTest() {
 
   // Verifier
   Verifier_begin = std::chrono::high_resolution_clock::now();
-  DiffieHellmanTripleVerifier verifier(params, Msg);
+  DiffieHellmanTripleVerifierBatch verifier(params, Msg);
   bool res = verifier.Verify();
   Verifier_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -303,7 +301,7 @@ void DiffieHellmanTest() {
   printf(
       "\n-------------------DiffieHellmanTest End--------------------------\n");
 }
-*/
+
 
 int main() {
   InitTest(NID_secp256k1);
@@ -311,9 +309,9 @@ int main() {
 
   DlogEqualityTest();
 
-  // PedersenCommitmentOpenTest();
+  PedersenCommitmentOpenTest();
 
-  // DiffieHellmanTest();
+  DiffieHellmanTest();
 
   EndTest();
   return 0;

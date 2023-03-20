@@ -12,9 +12,9 @@ void PedersenCommitmentProverShort::Prove() {
 
   // Compute First Message T = Y1*G + r2*H
   // sample two random number in Z_q
-  std::vector<BIGNUM*>& k = GetK();
-  std::vector<const BIGNUM*>& x = GetX();
-  SigmaProtocolResponseMsgShort& Msg = this->GetMsgReference();
+  std::vector<BIGNUM*> &k = GetK();
+  std::vector<const BIGNUM*> &x = GetX();
+  SigmaProtocolResponseMsgShort &Msg = this->GetMsgReference();
 
   EC_POINT* T = EC_POINT_new(params_.group);
 
@@ -48,9 +48,9 @@ void PedersenCommitmentProverBatch::Prove() {
 
   // Compute First Message T = Y1*G + r2*H
   // sample two random number in Z_q
-  std::vector<BIGNUM*>& k = GetK();
-  std::vector<const BIGNUM*>& x = GetX();
-  SigmaProtocolResponseMsgBatch& Msg = this->GetMsgReference();
+  std::vector<BIGNUM*> &k = GetK();
+  std::vector<const BIGNUM*> &x = GetX();
+  SigmaProtocolResponseMsgBatch &Msg = this->GetMsgReference();
 
   BN_rand_range(k[0], params_.p);
   BN_rand_range(k[1], params_.p);
@@ -106,7 +106,7 @@ bool PedersemCommitmentVerifierShort::Verify() {
 
 bool PedersemCommitmentVerifierBatch::Verify() {
   BN_CTX* ctx = BN_CTX_new();
-  SigmaProtocolResponseMsgBatch& Msg = this->GetMsg();
+  SigmaProtocolResponseMsgBatch &Msg = this->GetMsg();
 
   // compute the challenge hash(G,H,Commitment,T)
   BIGNUM* challenge =
@@ -153,7 +153,7 @@ BIGNUM* PedersenCommitmentOpenGetChallenge(
   length[2] = EC_POINT_point2buf(params.group, params.H[0],
                                  POINT_CONVERSION_COMPRESSED, &data[2], ctx);
   length[3] = EC_POINT_point2buf(params.group, T, POINT_CONVERSION_COMPRESSED,
-                                 &data[2], ctx);
+                                 &data[3], ctx);
 
   unsigned char* md = nullptr;
   unsigned int md_length = 0;

@@ -12,7 +12,7 @@ namespace yacl::crypto {
 
 void DlogEqualityProverShort::Prove() {
   BN_CTX* ctx = BN_CTX_new();
-
+  SigmaProtocolResponseMsgShort &Msg = GetMsgReference();
   // sample a random number w2 in Z_p
   BN_rand_range(GetK()[0], params_.p);
   // compute FirstMessage: two commitments
@@ -24,11 +24,11 @@ void DlogEqualityProverShort::Prove() {
 
   // compute SecondMessage
   // compute the challenge hash(G, H, Y1, Y2, t1, t2)
-  BN_free(GetMsgReference().c);
-  GetMsgReference().c = DlogEqualityGetChallenge(params_, T, ctx);
+  BN_free(Msg.c);
+  Msg.c = DlogEqualityGetChallenge(params_, T, ctx);
 
-  BN_mod_mul(GetMsg().s[0], GetMsgReference().c, GetX()[0], params_.p, ctx);
-  BN_mod_add(GetMsg().s[0], GetMsg().s[0], GetK()[0], params_.p, ctx);
+  BN_mod_mul(Msg.s[0], Msg.c, GetX()[0], params_.p, ctx);
+  BN_mod_add(Msg.s[0], Msg.s[0], GetK()[0], params_.p, ctx);
 
   EC_POINT_free(T[0]);
   EC_POINT_free(T[1]);
@@ -37,21 +37,22 @@ void DlogEqualityProverShort::Prove() {
 
 void DlogEqualityProverBatch::Prove() {
   BN_CTX* ctx = BN_CTX_new();
+  SigmaProtocolResponseMsgBatch &Msg = GetMsgReference();
 
   // sample a random number w2 in Z_p
   BN_rand_range(GetK()[0], params_.p);
   // compute FirstMessage: two commitments
-  EC_POINT_mul(params_.group, GetMsgReference().T[0], nullptr, params_.G[0],
+  EC_POINT_mul(params_.group, Msg.T[0], nullptr, params_.G[0],
                GetK()[0], ctx);
-  EC_POINT_mul(params_.group, GetMsgReference().T[1], nullptr, params_.G[1],
+  EC_POINT_mul(params_.group, Msg.T[1], nullptr, params_.G[1],
                GetK()[0], ctx);
 
   // compute SecondMessage
   // compute the challenge hash(G, H, Y1, Y2, t1, t2)
-  BIGNUM* challenge = DlogEqualityGetChallenge(params_, GetMsg().T, ctx);
+  BIGNUM* challenge = DlogEqualityGetChallenge(params_, Msg.T, ctx);
 
-  BN_mod_mul(GetMsg().s[0], challenge, GetX()[0], params_.p, ctx);
-  BN_mod_add(GetMsg().s[0], GetMsg().s[0], GetK()[0], params_.p, ctx);
+  BN_mod_mul(Msg.s[0], challenge, GetX()[0], params_.p, ctx);
+  BN_mod_add(Msg.s[0], Msg.s[0], GetK()[0], params_.p, ctx);
 
   BN_CTX_free(ctx);
   BN_free(challenge);
@@ -60,6 +61,7 @@ void DlogEqualityProverBatch::Prove() {
 bool DlogEqualityVerifierShort::Verify() {
   BN_CTX* ctx = BN_CTX_new();
   int res = 0;
+    const SigmaProtocolResponseMsgShort &Msg = GetMsg();
 
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
 
@@ -68,19 +70,19 @@ bool DlogEqualityVerifierShort::Verify() {
   T.emplace_back(EC_POINT_new(params_.group));
 
   // 1)T1 = s[0]*G[0] - c*H[0]
-  EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], GetMsg().s[0], ctx);
-  EC_POINT_mul(params_.group, tmp1, nullptr, params_.H[0], GetMsg().c, ctx);
+  EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], Msg.s[0], ctx);
+  EC_POINT_mul(params_.group, tmp1, nullptr, params_.H[0], Msg.c, ctx);
   EC_POINT_invert(params_.group, tmp1, ctx);
   EC_POINT_add(params_.group, T[0], T[0], tmp1, ctx);
 
   // 2)T2 = s[0]*G[1] - c*H[1]
-  EC_POINT_mul(params_.group, T[1], nullptr, params_.G[1], GetMsg().s[0], ctx);
-  EC_POINT_mul(params_.group, tmp1, nullptr, params_.H[1], GetMsg().c, ctx);
+  EC_POINT_mul(params_.group, T[1], nullptr, params_.G[1], Msg.s[0], ctx);
+  EC_POINT_mul(params_.group, tmp1, nullptr, params_.H[1], Msg.c, ctx);
   EC_POINT_invert(params_.group, tmp1, ctx);
   EC_POINT_add(params_.group, T[1], T[1], tmp1, ctx);
 
   BIGNUM* challenge = DlogEqualityGetChallenge(params_, T, ctx);
-  res = BN_cmp(challenge, GetMsg().c);
+  res = BN_cmp(challenge, Msg.c);
 
   BN_CTX_free(ctx);
   EC_POINT_free(tmp1);
@@ -94,24 +96,25 @@ bool DlogEqualityVerifierBatch::Verify() {
   BN_CTX* ctx = BN_CTX_new();
   int res = 0;
   int tmp = 0;
+  const SigmaProtocolResponseMsgBatch &Msg = GetMsg();
 
-  BIGNUM* challenge = DlogEqualityGetChallenge(params_, GetMsg().T, ctx);
+  BIGNUM* challenge = DlogEqualityGetChallenge(params_, Msg.T, ctx);
 
   // verify whether :
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
   EC_POINT* tmp2 = EC_POINT_new(params_.group);
 
   // 1) G^r2 = Y1^c*t1
-  EC_POINT_mul(params_.group, tmp1, nullptr, params_.G[0], GetMsg().s[0], ctx);
+  EC_POINT_mul(params_.group, tmp1, nullptr, params_.G[0], Msg.s[0], ctx);
   EC_POINT_mul(params_.group, tmp2, nullptr, params_.H[0], challenge, ctx);
-  EC_POINT_add(params_.group, tmp2, tmp2, GetMsg().T[0], ctx);
+  EC_POINT_add(params_.group, tmp2, tmp2, Msg.T[0], ctx);
   if ((tmp = EC_POINT_cmp(params_.group, tmp1, tmp2, ctx) == -1)) goto END;
   res += tmp;
 
   // 2) H^r2 = Y2^c*t2
-  EC_POINT_mul(params_.group, tmp1, nullptr, params_.G[1], GetMsg().s[0], ctx);
+  EC_POINT_mul(params_.group, tmp1, nullptr, params_.G[1], Msg.s[0], ctx);
   EC_POINT_mul(params_.group, tmp2, nullptr, params_.H[1], challenge, ctx);
-  EC_POINT_add(params_.group, tmp2, tmp2, GetMsg().T[1], ctx);
+  EC_POINT_add(params_.group, tmp2, tmp2, Msg.T[1], ctx);
   if ((tmp = EC_POINT_cmp(params_.group, tmp1, tmp2, ctx) == -1)) goto END;
   res += tmp;
 
