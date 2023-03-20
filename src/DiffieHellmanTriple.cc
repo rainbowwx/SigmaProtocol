@@ -16,7 +16,9 @@ void DiffieHellmanTripleProverShort::Prove() {
   BN_rand_range(k[1], params_.p);
 
   std::vector<EC_POINT*> T;
-  T.emplace_back(3, EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
 
   // calculate T1,T2,T3
   EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], k[0], ctx);
@@ -33,6 +35,9 @@ void DiffieHellmanTripleProverShort::Prove() {
   BN_mod_add(Msg.s[1], Msg.s[1], k[1], params_.p, ctx);
 
   BN_CTX_free(ctx);
+  EC_POINT_free(T[0]);
+  EC_POINT_free(T[1]);
+  EC_POINT_free(T[2]);
 }
 
 void DiffieHellmanTripleProverBatch::Prove() {
@@ -68,11 +73,11 @@ bool DiffieHellmanTripleVerifierShort::Verify() {
   BN_CTX* ctx = BN_CTX_new();
   SigmaProtocolResponseMsgShort& Msg = this->GetMsg();
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
-  EC_POINT* tmp2 = EC_POINT_new(params_.group);
   int res = 0;
-  int tmp = 0;
   std::vector<EC_POINT*> T;
-  T.emplace_back(3, EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
 
   // 1) compute T[0] = s[0]*G[0] - c*H[0]
   EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], Msg.s[0], ctx);
@@ -98,7 +103,6 @@ bool DiffieHellmanTripleVerifierShort::Verify() {
 
   BN_free(challenge);
   EC_POINT_free(tmp1);
-  EC_POINT_free(tmp2);
   BN_CTX_free(ctx);
   if (res == -1) throw std::invalid_argument("EC_POINT_cmp error.\n");
 

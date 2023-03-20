@@ -10,12 +10,12 @@ BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
   std::vector<unsigned int> length(n);
   BIGNUM* challenge = BN_new();
   for (size_t i = 0; i < params->G.size(); i++) {
-    length.emplace_back((params->group, params->G[i],
-                         POINT_CONVERSION_COMPRESSED, &data[i], ctx));
+    length[i] = EC_POINT_point2buf(params->group, params->G[i],
+                                   POINT_CONVERSION_COMPRESSED, &data[i], ctx);
   }
   for (size_t i = 0; i < T.size(); i++) {
-    length.emplace_back(
-        (params->group, T[i], POINT_CONVERSION_COMPRESSED, &data[i], ctx));
+    length[i] = EC_POINT_point2buf(params->group, T[i],
+                                   POINT_CONVERSION_COMPRESSED, &data[i], ctx);
   }
   unsigned char* md = nullptr;
   unsigned int md_length = 0;

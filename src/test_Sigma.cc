@@ -115,7 +115,6 @@ void SchnorrTest() {
   printf("\n-------------------SchnorrTest End--------------------------\n");
 }
 
-/*
 void DlogEqualityTest() {
   printf(
       "\n-------------------DlogEqualityTest "
@@ -136,15 +135,13 @@ void DlogEqualityTest() {
 
   // DlogEqualityCommonInput params(curve, generator,generator,Y1,Y2, "sha256");
   DlogEqualityCommonInput params(curve, G, H, Y1, Y2, "sha256");
-  DlogEqualityProverInput ProverInput(w);
 
   // Prover
   Prover_begin = std::chrono::high_resolution_clock::now();
-  DlogEqualityProver Prover(params, ProverInput);
+  DlogEqualityProverBatch Prover(params, w);
 
-  Prover.ComputeFirstMessage();
-  Prover.ComputeSecondMessage();
-  DlogEqualityMessage Msg = Prover.getMsg();
+  Prover.Prove();
+  SigmaProtocolResponseMsgBatch Msg = Prover.GetMsg();
   Prover_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
       Prover_end - Prover_begin);
@@ -152,7 +149,7 @@ void DlogEqualityTest() {
 
   // Verifier
   Verifier_begin = std::chrono::high_resolution_clock::now();
-  DlogEqualityVerifier Verifier(params, Msg);
+  DlogEqualityVerifierBatch Verifier(params, Msg);
   bool res = Verifier.Verify();
   Verifier_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -177,6 +174,7 @@ void DlogEqualityTest() {
       "\n-------------------DlogEqualityTest End--------------------------\n");
 }
 
+/*
 void PedersenCommitmentOpenTest() {
   printf(
       "\n-------------------PedersenCommitmentOpenTest "
@@ -311,7 +309,7 @@ int main() {
   InitTest(NID_secp256k1);
   SchnorrTest();
 
-  // DlogEqualityTest();
+  DlogEqualityTest();
 
   // PedersenCommitmentOpenTest();
 

@@ -19,9 +19,8 @@ struct SchnorrCommonInput : public SigmaProtocolCommonInput {
 class SchnorrProverShort : public SigmaProtocolProverShort {
  public:
   SchnorrProverShort(const SchnorrCommonInput& params, const BIGNUM* x)
-      : params_(params), SigmaProtocolProverShort() {
-    GetX().emplace_back(x);
-    GetMsgReference().s.emplace_back(BN_new());
+      : params_(params), SigmaProtocolProverShort(1, 1, 1) {
+    GetX()[0] = x;
   }
 
   void Prove() override;
@@ -33,10 +32,8 @@ class SchnorrProverShort : public SigmaProtocolProverShort {
 class SchnorrProverBatch : public SigmaProtocolProverBatch {
  public:
   SchnorrProverBatch(const SchnorrCommonInput& params, const BIGNUM* x)
-      : params_(params), SigmaProtocolProverBatch(params.group) {
-    GetX().emplace_back(x);
-    GetMsgReference().T.emplace_back(EC_POINT_new(params_.group));
-    GetMsgReference().s.emplace_back(BN_new());
+      : params_(params), SigmaProtocolProverBatch(params.group, 1, 1, 1, 1) {
+    GetX()[0] = x;
   }
 
   void Prove() override;

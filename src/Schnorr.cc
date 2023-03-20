@@ -24,12 +24,12 @@ void SchnorrProverShort::Prove() {
   BN_mul(GetMsgReference().s[0], GetX()[0], GetMsgReference().c, ctx);
   BN_add(GetMsgReference().s[0], GetMsgReference().s[0], random);
 
+  EC_POINT_free(T);
   BN_CTX_free(ctx);
 }
 
 void SchnorrProverBatch::Prove() {
   BN_CTX* ctx = BN_CTX_new();
-  throw std::invalid_argument("");
   // sample a random number k in Z_p
   GetK().emplace_back(BN_new());
   std::vector<BIGNUM*>& k = GetK();

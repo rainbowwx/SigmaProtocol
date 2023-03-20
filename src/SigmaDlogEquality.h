@@ -23,10 +23,8 @@ class DlogEqualityProverShort : public SigmaProtocolProverShort {
  public:
   DlogEqualityProverShort(const DlogEqualityCommonInput& params,
                           const BIGNUM* x)
-      : params_(params), SigmaProtocolProverShort() {
-    GetK().emplace_back(BN_new());
-    GetX().emplace_back(x);
-    GetMsgReference().s.emplace_back(BN_new());
+      : params_(params), SigmaProtocolProverShort(1, 1, 1) {
+    GetX()[0] = x;
   }
   void Prove() override;
 
@@ -38,11 +36,8 @@ class DlogEqualityProverBatch : public SigmaProtocolProverBatch {
  public:
   DlogEqualityProverBatch(const DlogEqualityCommonInput& params,
                           const BIGNUM* x)
-      : params_(params), SigmaProtocolProverBatch(params.group) {
-    GetK().emplace_back(BN_new());
-    GetX().emplace_back(x);
-    GetMsgReference().T.emplace_back(2, EC_POINT_new(params_.group));
-    GetMsgReference().s.emplace_back(BN_new());
+      : params_(params), SigmaProtocolProverBatch(params.group, 1, 1, 1, 2) {
+    GetX()[0] = x;
   }
   void Prove() override;
 

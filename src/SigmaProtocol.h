@@ -24,21 +24,17 @@ namespace yacl::crypto {
 // SigmaprotocolCommoInput specifies the OneWayHomomorphism and hashname of
 // practical protocol
 struct SigmaProtocolCommonInput {
-  SigmaProtocolCommonInput(const EC_GROUP* group, size_t n1, size_t n2,
+  SigmaProtocolCommonInput(const EC_GROUP* group, size_t G_size, size_t H_size,
                            const char* hashname)
       : group(group),
-        n1(n1),
-        n2(n2),
         hashname(hashname),
-        G(n1, nullptr),
-        H(n2, nullptr) {
+        G(G_size, nullptr),
+        H(H_size, nullptr) {
     p = EC_GROUP_get0_order(group);
   }
 
   const EC_GROUP* group;
   const BIGNUM* p;
-  size_t n1;                       // number of elements in vector G
-  size_t n2;                       //  number of elements in vector H
   std::vector<const EC_POINT*> G;  // public generators of group
   std::vector<const EC_POINT*> H;  // public group elements
 
@@ -48,7 +44,12 @@ struct SigmaProtocolCommonInput {
 struct SigmaProtocolResponseMsgShort {
   std::vector<BIGNUM*> s;  // The second message which prover computed
   BIGNUM* c;               // challenge
-  SigmaProtocolResponseMsgShort() { c = BN_new(); }
+  SigmaProtocolResponseMsgShort(size_t s_size) {
+    c = BN_new();
+    for (size_t i = 0; i < s_size; i++) {
+      s.emplace_back(BN_new());
+    }
+  }
 
   SigmaProtocolResponseMsgShort(std::vector<BIGNUM*> s, BIGNUM* c) {
     for (size_t i = 0; i < s.size(); i++) {
@@ -81,12 +82,26 @@ struct SigmaProtocolResponseMsgBatch {
   std::vector<EC_POINT*> T;
   std::vector<BIGNUM*> s;
 
-  SigmaProtocolResponseMsgBatch(const EC_GROUP* group) { this->group = group; }
+  SigmaProtocolResponseMsgBatch(const EC_GROUP* group, size_t T_size,
+                                size_t s_size) {
+    this->group = group;
+    size_t i;
+    this->T.reserve(T_size);
+    this->s.reserve(s_size);
+    for (i = 0; i < T_size; i++) {
+      this->T.emplace_back(EC_POINT_new(group));
+    }
+    for (i = 0; i < s_size; i++) {
+      this->s.emplace_back(BN_new());
+    }
+  }
 
   SigmaProtocolResponseMsgBatch(const EC_GROUP* group,
                                 const std::vector<const EC_POINT*> T,
                                 const std::vector<const BIGNUM*> s) {
     this->group = group;
+    this->T.reserve(T.size());
+    this->s.reserve(s.size());
     for (size_t i = 0; i < T.size(); i++) {
       this->T.emplace_back(EC_POINT_new(group));
       EC_POINT_copy(this->T[i], T[i]);
@@ -100,6 +115,8 @@ struct SigmaProtocolResponseMsgBatch {
 
   SigmaProtocolResponseMsgBatch(const SigmaProtocolResponseMsgBatch& msg) {
     this->group = msg.group;
+    this->T.reserve(msg.T.size());
+    this->s.reserve(msg.s.size());
     for (size_t i = 0; i < msg.T.size(); i++) {
       this->T.emplace_back(EC_POINT_new(group));
       EC_POINT_copy(this->T[i], msg.T[i]);
@@ -126,7 +143,26 @@ struct SigmaProtocolResponseMsgBatch {
 // which satisfy {Z_i}_{i \in [1,n]} = {[x_i]}_{i \in [1,n]}
 class SigmaProtocolProverShort {
  public:
-  SigmaProtocolProverShort() : msg_() {}
+  SigmaProtocolProverShort(size_t x_size, size_t k_size, size_t s_size)
+      : msg_(s_size), x_(x_size, nullptr) {
+    k_.reserve(k_size);
+    for (size_t i = 0; i < k_size; i++) {
+      k_.emplace_back(BN_new());
+    }
+  }
+
+  SigmaProtocolProverShort(size_t x_size, size_t k_size, size_t s_size,
+                           const std::vector<const BIGNUM*>& x)
+      : msg_(s_size), x_(x_size, nullptr) {
+    k_.reserve(k_size);
+    size_t i = 0;
+    for (i = 0; i < k_size; i++) {
+      k_.emplace_back(BN_new());
+    }
+    for (i = 0; i < x_size; i++) {
+      this->x_[i] = x[i];
+    }
+  }
 
   virtual ~SigmaProtocolProverShort(){};
 
@@ -151,7 +187,28 @@ class SigmaProtocolProverShort {
 // This class
 class SigmaProtocolProverBatch {
  public:
-  SigmaProtocolProverBatch(const EC_GROUP* group) : msg_(group) {}
+  SigmaProtocolProverBatch(const EC_GROUP* group, size_t x_size, size_t k_size,
+                           size_t s_size, size_t T_size)
+      : msg_(group, T_size, s_size), x_(x_size, nullptr) {
+    k_.reserve(k_size);
+    for (size_t i = 0; i < k_size; i++) {
+      k_.emplace_back(BN_new());
+    }
+  }
+
+  SigmaProtocolProverBatch(const EC_GROUP* group, size_t x_size, size_t k_size,
+                           size_t s_size, size_t T_size,
+                           const std::vector<const BIGNUM*>& x)
+      : msg_(group, T_size, s_size), x_(x_size, nullptr) {
+    k_.reserve(k_size);
+    size_t i = 0;
+    for (i = 0; i < k_size; i++) {
+      k_.emplace_back(BN_new());
+    }
+    for (i = 0; i < x_size; i++) {
+      this->x_[i] = x[i];
+    }
+  }
 
   virtual ~SigmaProtocolProverBatch(){};
 

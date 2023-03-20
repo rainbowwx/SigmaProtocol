@@ -37,6 +37,7 @@ void PedersenCommitmentProverShort::Prove() {
   BN_mul(Msg.s[1], Msg.c, x[1], ctx);
   BN_add(Msg.s[1], Msg.s[1], k[1]);
 
+  EC_POINT_free(T);
   BN_CTX_free(ctx);
   EC_POINT_free(tmp);
 }

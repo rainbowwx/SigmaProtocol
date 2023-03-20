@@ -32,11 +32,9 @@ class DiffieHellmanTripleProverShort : public SigmaProtocolProverShort {
  public:
   DiffieHellmanTripleProverShort(const DiffieHellmanTripleCommonInput& params,
                                  const BIGNUM* x1, const BIGNUM* x2)
-      : params_(params), SigmaProtocolProverShort() {
-    GetK().emplace_back(2, BN_new());
-    GetX().emplace_back(x1);
-    GetX().emplace_back(x2);
-    GetMsgReference().s.emplace_back(2, BN_new());
+      : params_(params), SigmaProtocolProverShort(2, 2, 2) {
+    GetX()[0] = x1;
+    GetX()[1] = x2;
   }
 
   void Prove() override;
@@ -49,12 +47,9 @@ class DiffieHellmanTripleProverBatch : public SigmaProtocolProverBatch {
  public:
   DiffieHellmanTripleProverBatch(const DiffieHellmanTripleCommonInput& params,
                                  const BIGNUM* x1, const BIGNUM* x2)
-      : params_(params), SigmaProtocolProverBatch(params_.group) {
-    GetK().emplace_back(2, BN_new());
-    GetX().emplace_back(x1);
-    GetX().emplace_back(x2);
-    GetMsgReference().s.emplace_back(2, BN_new());
-    GetMsgReference().T.emplace_back(3, EC_POINT_new(params_.group));
+      : params_(params), SigmaProtocolProverBatch(params_.group, 2, 2, 2, 3) {
+    GetX()[0] = x1;
+    GetX()[1] = x2;
   }
 
   void Prove() override;

@@ -17,7 +17,8 @@ void DlogEqualityProverShort::Prove() {
   BN_rand_range(GetK()[0], params_.p);
   // compute FirstMessage: two commitments
   std::vector<EC_POINT*> T;
-  T.emplace_back(2, EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
   EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], GetK()[0], ctx);
   EC_POINT_mul(params_.group, T[1], nullptr, params_.G[1], GetK()[0], ctx);
 
@@ -63,7 +64,8 @@ bool DlogEqualityVerifierShort::Verify() {
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
 
   std::vector<EC_POINT*> T;
-  T.emplace_back(2, EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
+  T.emplace_back(EC_POINT_new(params_.group));
 
   // 1)T1 = s[0]*G[0] - c*H[0]
   EC_POINT_mul(params_.group, T[0], nullptr, params_.G[0], GetMsg().s[0], ctx);
