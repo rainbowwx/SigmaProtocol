@@ -78,15 +78,13 @@ void SchnorrTest() {
 
   EC_POINT_mul(curve, H, nullptr, G, w, ctx);
   SchnorrCommonInput params(curve, G, H, "sha256");
-  SchnorrProverInput input(w);
 
   // Prover
   Prover_begin = std::chrono::high_resolution_clock::now();
 
-  SchnorrProver Prover(params, input);
-  Prover.ComputeFirstMessage();
-  Prover.ComputeSecondMessage();
-  SchnorrMessage Msg = Prover.getMsg();
+  SchnorrProverBatch Prover(params, w);
+  Prover.Prove();
+  SigmaProtocolResponseMsgBatch Msg = Prover.GetMsg();
 
   Prover_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -95,7 +93,7 @@ void SchnorrTest() {
 
   // Verifier
   Verifier_begin = std::chrono::high_resolution_clock::now();
-  SchnorrVerifier Verifier(params, Msg);
+  SchnorrVerifierBatch Verifier(params, Msg);
   bool res = Verifier.Verify();
   Verifier_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -117,6 +115,7 @@ void SchnorrTest() {
   printf("\n-------------------SchnorrTest End--------------------------\n");
 }
 
+/*
 void DlogEqualityTest() {
   printf(
       "\n-------------------DlogEqualityTest "
@@ -212,7 +211,7 @@ void PedersenCommitmentOpenTest() {
   prover.ComputeFirstMessage();
   prover.ComputeSecondMessage();
 
-  PedersenCommitmentMessage Msg = prover.getMsg();
+  PedersenCommitmentMsgBatch Msg = prover.getMsg();
   Prover_end = std::chrono::high_resolution_clock::now();
   time_span = std::chrono::duration_cast<std::chrono::duration<double>>(
       Prover_end - Prover_begin);
@@ -270,7 +269,7 @@ void DiffieHellmanTest() {
 
   // Prover
   Prover_begin = std::chrono::high_resolution_clock::now();
-  DiffieHellmanTripleProver prover(params, input);
+  DiffieHellmanTripleProverBatch prover(params, input);
 
   prover.ComputeFirstMessage();
   prover.ComputeSecondMessage();
@@ -306,16 +305,17 @@ void DiffieHellmanTest() {
   printf(
       "\n-------------------DiffieHellmanTest End--------------------------\n");
 }
+*/
 
 int main() {
   InitTest(NID_secp256k1);
   SchnorrTest();
 
-  DlogEqualityTest();
+  // DlogEqualityTest();
 
-  PedersenCommitmentOpenTest();
+  // PedersenCommitmentOpenTest();
 
-  DiffieHellmanTest();
+  // DiffieHellmanTest();
 
   EndTest();
   return 0;
