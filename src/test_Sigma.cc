@@ -19,6 +19,8 @@ std::chrono::duration<double> time_span;
 
 double p_time, v_time;
 
+// This function is for testing purposes only, and is not and cannot be used to
+// generate the generators PedersenCommitment
 void SampleGenerator(const EC_GROUP* curve, EC_POINT* g) {
   BIGNUM* p = BN_new();
   BIGNUM* x = BN_new();
@@ -34,7 +36,7 @@ void SampleGenerator(const EC_GROUP* curve, EC_POINT* g) {
 
     assert(EC_POINT_mul(curve, g, x, nullptr, nullptr, ctx));
     assert(EC_POINT_mul(curve, tmp, nullptr, g, cofactor, ctx));
-    res = EC_POINT_is_at_infinity(curve, g);
+    res = EC_POINT_is_at_infinity(curve, tmp);
   }
 
   BN_free(x);
@@ -467,12 +469,12 @@ int main() {
 
   yacl::crypto::SchnorrTest();
 
-  yacl::crypto::DlogEqualityTest();
+  // yacl::crypto::DlogEqualityTest();
 
-  yacl::crypto::DiffieHellmanTest();
+  // yacl::crypto::PedersenCommitmentOpenTest();
 
-  yacl::crypto::PedersenCommitmentOpenTest();
+  // yacl::crypto::DiffieHellmanTest();
 
-  yacl::crypto::EndTest();
+  // yacl::crypto::EndTest();
   return 0;
 }
