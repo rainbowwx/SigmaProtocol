@@ -12,9 +12,9 @@ void PedersenCommitmentProverShort::Prove() {
 
   // Compute First Message T = Y1*G + r2*H
   // sample two random number in Z_q
-  std::vector<BIGNUM*> &k = GetK();
-  std::vector<const BIGNUM*> &x = GetX();
-  SigmaProtocolResponseMsgShort &Msg = this->GetMsgReference();
+  std::vector<BIGNUM*>& k = GetK();
+  std::vector<const BIGNUM*>& x = GetX();
+  SigmaProtocolResponseMsgShort& Msg = this->GetMsgReference();
 
   EC_POINT* T = EC_POINT_new(params_.group);
 
@@ -48,14 +48,15 @@ void PedersenCommitmentProverBatch::Prove() {
 
   // Compute First Message T = Y1*G + r2*H
   // sample two random number in Z_q
-  std::vector<BIGNUM*> &k = GetK();
-  std::vector<const BIGNUM*> &x = GetX();
-  SigmaProtocolResponseMsgBatch &Msg = this->GetMsgReference();
+  std::vector<BIGNUM*>& k = GetK();
+  std::vector<const BIGNUM*>& x = GetX();
+  SigmaProtocolResponseMsgBatch& Msg = this->GetMsgReference();
 
   BN_rand_range(k[0], params_.p);
   BN_rand_range(k[1], params_.p);
 
   EC_POINT_mul(params_.group, Msg.T[0], nullptr, params_.G[0], k[0], ctx);
+  if (params_.G[1] == nullptr) printf("errorr");
   EC_POINT_mul(params_.group, tmp, nullptr, params_.G[1], k[1], ctx);
   EC_POINT_add(params_.group, Msg.T[0], Msg.T[0], tmp, ctx);
 
@@ -106,7 +107,7 @@ bool PedersemCommitmentVerifierShort::Verify() {
 
 bool PedersemCommitmentVerifierBatch::Verify() {
   BN_CTX* ctx = BN_CTX_new();
-  SigmaProtocolResponseMsgBatch &Msg = this->GetMsg();
+  SigmaProtocolResponseMsgBatch& Msg = this->GetMsg();
 
   // compute the challenge hash(G,H,Commitment,T)
   BIGNUM* challenge =

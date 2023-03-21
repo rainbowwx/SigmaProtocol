@@ -12,7 +12,7 @@ namespace yacl::crypto {
 
 void DlogEqualityProverShort::Prove() {
   BN_CTX* ctx = BN_CTX_new();
-  SigmaProtocolResponseMsgShort &Msg = GetMsgReference();
+  SigmaProtocolResponseMsgShort& Msg = GetMsgReference();
   // sample a random number w2 in Z_p
   BN_rand_range(GetK()[0], params_.p);
   // compute FirstMessage: two commitments
@@ -37,15 +37,13 @@ void DlogEqualityProverShort::Prove() {
 
 void DlogEqualityProverBatch::Prove() {
   BN_CTX* ctx = BN_CTX_new();
-  SigmaProtocolResponseMsgBatch &Msg = GetMsgReference();
+  SigmaProtocolResponseMsgBatch& Msg = GetMsgReference();
 
   // sample a random number w2 in Z_p
   BN_rand_range(GetK()[0], params_.p);
   // compute FirstMessage: two commitments
-  EC_POINT_mul(params_.group, Msg.T[0], nullptr, params_.G[0],
-               GetK()[0], ctx);
-  EC_POINT_mul(params_.group, Msg.T[1], nullptr, params_.G[1],
-               GetK()[0], ctx);
+  EC_POINT_mul(params_.group, Msg.T[0], nullptr, params_.G[0], GetK()[0], ctx);
+  EC_POINT_mul(params_.group, Msg.T[1], nullptr, params_.G[1], GetK()[0], ctx);
 
   // compute SecondMessage
   // compute the challenge hash(G, H, Y1, Y2, t1, t2)
@@ -61,7 +59,7 @@ void DlogEqualityProverBatch::Prove() {
 bool DlogEqualityVerifierShort::Verify() {
   BN_CTX* ctx = BN_CTX_new();
   int res = 0;
-    const SigmaProtocolResponseMsgShort &Msg = GetMsg();
+  const SigmaProtocolResponseMsgShort& Msg = GetMsg();
 
   EC_POINT* tmp1 = EC_POINT_new(params_.group);
 
@@ -96,7 +94,7 @@ bool DlogEqualityVerifierBatch::Verify() {
   BN_CTX* ctx = BN_CTX_new();
   int res = 0;
   int tmp = 0;
-  const SigmaProtocolResponseMsgBatch &Msg = GetMsg();
+  const SigmaProtocolResponseMsgBatch& Msg = GetMsg();
 
   BIGNUM* challenge = DlogEqualityGetChallenge(params_, Msg.T, ctx);
 

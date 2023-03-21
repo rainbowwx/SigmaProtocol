@@ -6,23 +6,21 @@ namespace yacl::crypto {
 
 void SchnorrProverShort::Prove() {
   BN_CTX* ctx = BN_CTX_new();
-  throw std::invalid_argument("");
   // sample a random number k in Z_p
   GetK().emplace_back(BN_new());
   std::vector<BIGNUM*>& k = GetK();
-  BIGNUM* random = BN_new();
   EC_POINT* T = EC_POINT_new(params_.group);
-  BN_rand_range(random, params_.p);
-  k.push_back(random);
+  BN_rand_range(k[0], params_.p);
   // compute FirstMessage T = random *G
-  EC_POINT_mul(params_.group, T, nullptr, params_.G[0], random, ctx);
+  EC_POINT_mul(params_.group, T, nullptr, params_.G[0], k[0], ctx);
+
   // get challenge
   BN_free(GetMsgReference().c);  // mark may be wrong
   GetMsgReference().c = SchnorrGetChallenge(params_, T, ctx);
 
   // calculate s = w*e + random
   BN_mul(GetMsgReference().s[0], GetX()[0], GetMsgReference().c, ctx);
-  BN_add(GetMsgReference().s[0], GetMsgReference().s[0], random);
+  BN_add(GetMsgReference().s[0], GetMsgReference().s[0], k[0]);
 
   EC_POINT_free(T);
   BN_CTX_free(ctx);
@@ -32,7 +30,7 @@ void SchnorrProverBatch::Prove() {
   BN_CTX* ctx = BN_CTX_new();
   // sample a random number k in Z_p
   GetK().emplace_back(BN_new());
-  std::vector<BIGNUM*> k = GetK();
+  std::vector<BIGNUM*>& k = GetK();
   BN_rand_range(k[0], params_.p);
   // compute FirstMessage T = random *G
   EC_POINT_mul(params_.group, GetMsgReference().T[0], nullptr, params_.G[0],

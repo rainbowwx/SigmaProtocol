@@ -21,10 +21,10 @@ struct DiffieHellmanTripleCommonInput : public SigmaProtocolCommonInput {
                                  const EC_POINT* H3,
                                  const char* hashname = "sha256")
       : SigmaProtocolCommonInput(group, 1, 3, hashname) {
-    this->G[0] = G;
-    this->H[0] = H1;
-    this->H[1] = H2;
-    this->H[2] = H3;
+    this->G.emplace_back(G);
+    this->H.emplace_back(H1);
+    this->H.emplace_back(H2);
+    this->H.emplace_back(H3);
   }
 };
 

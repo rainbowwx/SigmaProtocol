@@ -11,8 +11,8 @@ struct SchnorrCommonInput : public SigmaProtocolCommonInput {
   SchnorrCommonInput(const EC_GROUP* group, EC_POINT* G, EC_POINT* H,
                      const char* hashname = "sha256")
       : SigmaProtocolCommonInput(group, 1, 1, hashname) {
-    this->G[0] = G;
-    this->H[0] = H;
+    this->G.emplace_back(G);
+    this->H.emplace_back(H);
   }
 };
 

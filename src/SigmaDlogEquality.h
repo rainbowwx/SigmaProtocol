@@ -12,10 +12,10 @@ class DlogEqualityCommonInput : public SigmaProtocolCommonInput {
                           EC_POINT* H1, EC_POINT* H2,
                           const char* hashname = "sha256")
       : SigmaProtocolCommonInput(group, 2, 2, hashname) {
-    this->G[0] = G1;
-    this->G[1] = G2;
-    this->H[0] = H1;
-    this->H[1] = H2;
+    this->G.emplace_back(G1);
+    this->G.emplace_back(G2);
+    this->H.emplace_back(H1);
+    this->H.emplace_back(H2);
   }
 };
 

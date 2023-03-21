@@ -19,9 +19,9 @@ struct PedersenCommitmentCommonInput : public SigmaProtocolCommonInput {
                                 const EC_POINT* G2, const EC_POINT* Commitment,
                                 const char* hashname = "sha256")
       : SigmaProtocolCommonInput(group, 2, 1, hashname) {
-    this->G[0] = G1;
-    this->G[1] = G2;
-    this->H[0] = Commitment;
+    this->G.emplace_back(G1);
+    this->G.emplace_back(G2);
+    this->H.emplace_back(Commitment);
   }
 };
 

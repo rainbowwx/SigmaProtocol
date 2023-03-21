@@ -26,10 +26,9 @@ namespace yacl::crypto {
 struct SigmaProtocolCommonInput {
   SigmaProtocolCommonInput(const EC_GROUP* group, size_t G_size, size_t H_size,
                            const char* hashname)
-      : group(group),
-        hashname(hashname),
-        G(G_size, nullptr),
-        H(H_size, nullptr) {
+      : group(group), hashname(hashname) {
+    G.reserve(G_size);
+    H.reserve(H_size);
     p = EC_GROUP_get0_order(group);
   }
 
@@ -66,7 +65,7 @@ struct SigmaProtocolResponseMsgShort {
       BN_copy(this->s[i], msg.s[i]);
     }
     c = BN_new();
-    BN_copy(this->c, c);
+    BN_copy(this->c, msg.c);
   }
 
   ~SigmaProtocolResponseMsgShort() {
@@ -129,7 +128,7 @@ struct SigmaProtocolResponseMsgBatch {
   }
 
   ~SigmaProtocolResponseMsgBatch() {
-      for (size_t i = 0; i < T.size(); i++) {
+    for (size_t i = 0; i < T.size(); i++) {
       EC_POINT_free(T[i]);
     }
 
@@ -144,7 +143,7 @@ struct SigmaProtocolResponseMsgBatch {
 class SigmaProtocolProverShort {
  public:
   SigmaProtocolProverShort(size_t x_size, size_t k_size, size_t s_size)
-      : msg_(s_size), x_(x_size, nullptr) {
+      : msg_(s_size), x_(x_size, nullptr), flag(false) {
     k_.reserve(k_size);
     for (size_t i = 0; i < k_size; i++) {
       k_.emplace_back(BN_new());
@@ -153,7 +152,7 @@ class SigmaProtocolProverShort {
 
   SigmaProtocolProverShort(size_t x_size, size_t k_size, size_t s_size,
                            const std::vector<const BIGNUM*>& x)
-      : msg_(s_size), x_(x_size, nullptr) {
+      : msg_(s_size), x_(x_size, nullptr), flag(false) {
     k_.reserve(k_size);
     size_t i = 0;
     for (i = 0; i < k_size; i++) {
@@ -182,6 +181,8 @@ class SigmaProtocolProverShort {
   std::vector<BIGNUM*> k_;        // random elements take from group G
 
   SigmaProtocolResponseMsgShort msg_;
+
+  bool flag;
 };
 
 // This class
@@ -189,7 +190,7 @@ class SigmaProtocolProverBatch {
  public:
   SigmaProtocolProverBatch(const EC_GROUP* group, size_t x_size, size_t k_size,
                            size_t s_size, size_t T_size)
-      : msg_(group, T_size, s_size), x_(x_size, nullptr) {
+      : msg_(group, T_size, s_size), x_(x_size, nullptr), flag(false) {
     k_.reserve(k_size);
     for (size_t i = 0; i < k_size; i++) {
       k_.emplace_back(BN_new());
@@ -199,7 +200,7 @@ class SigmaProtocolProverBatch {
   SigmaProtocolProverBatch(const EC_GROUP* group, size_t x_size, size_t k_size,
                            size_t s_size, size_t T_size,
                            const std::vector<const BIGNUM*>& x)
-      : msg_(group, T_size, s_size), x_(x_size, nullptr) {
+      : msg_(group, T_size, s_size), x_(x_size, nullptr), flag(false) {
     k_.reserve(k_size);
     size_t i = 0;
     for (i = 0; i < k_size; i++) {
@@ -228,6 +229,8 @@ class SigmaProtocolProverBatch {
   std::vector<BIGNUM*> k_;        // random elements take from group G
 
   SigmaProtocolResponseMsgBatch msg_;
+
+  bool flag;
 };
 
 class SigmaProtocolVerifierShort {
@@ -261,13 +264,10 @@ class SigmaProtocolVerifierBatch {
 };
 
 BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
-                                  const EC_POINT* T,
-                                  BN_CTX* ctx);
-
+                                  const EC_POINT* T, BN_CTX* ctx);
 
 BIGNUM* SigmaProtocolGetChallenge(const SigmaProtocolCommonInput* params,
-                                  const std::vector<EC_POINT*> &T,
-                                  BN_CTX* ctx);
+                                  const std::vector<EC_POINT*>& T, BN_CTX* ctx);
 
 }  // namespace yacl::crypto
 
