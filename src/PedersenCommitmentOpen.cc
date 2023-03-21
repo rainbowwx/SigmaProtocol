@@ -99,6 +99,7 @@ bool PedersemCommitmentVerifierShort::Verify() {
 
   BN_CTX_free(ctx);
   EC_POINT_free(tmp);
+  EC_POINT_free(T);
   BN_free(challenge);
   if (res == -1) throw std::invalid_argument("EC_POINT_cmp error.\n");
 
